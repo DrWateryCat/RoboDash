@@ -1,0 +1,165 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		
+		<link href="css/bootstrap.min.css" rel="stylesheet" >
+		<script>
+			var isNode = false;
+			(function() {
+				
+    // Establish the root object, `window` in the browser, or `global` on the server.
+    var root = this; 
+
+    // Create a reference to this
+    var _ = new Object();
+
+    // Export the Underscore object for **CommonJS**, with backwards-compatibility
+    // for the old `require()` API. If we're not in CommonJS, add `_` to the
+    // global object.
+    if (typeof module !== 'undefined' && module.exports) {
+            module.exports = _;
+            root._ = _;
+            isNode = true;
+    } else {
+            root._ = _;
+    }
+})();
+		</script>
+	</head>
+	
+	<body>
+		<script src="networktables.js"></script>
+		<script src="jquery-2.1.4.js"></script>
+		
+		
+		<div>
+			Robot: <span id="robotstate">Unknown</span>
+		</div>
+		
+		<hr/>
+		
+		<div class="well">
+		<div align="left">
+			<select id="DropdownID">
+				<option value="0">Do Nothing</option>
+				<option value="1">Reach The Defenses</option>
+				<option value="2">Cross The Defenses</option>
+				<option value="3">Score</option>
+			</select>
+		<br />
+		
+		<br />
+		<input type="checkbox" id="use_textbox">Use the textbox</input>
+		<br />
+		<textarea rows="4" cols="50" id="textbox">
+		</textarea>
+		<br />
+		</div>
+		<div align="right">
+		<canvas id="camera_stream" width="640" height="480">idk</canvas>
+		</div>
+		</div>
+		
+		<div class="panel panel-default">
+			<div class="panel-heading">Networktables Debugging</div>
+			
+			<table id="nt" border=1 class="table">
+				<tbody></tbody>
+			</table>
+		</div>
+		
+		
+		<script type="text/javascript">
+		"use strict";
+		
+		var do_nothing = "stop;";
+		var reach = "forward 50 in; stop";;
+		var cross = "forward 136 in; stop;";
+		var score = "forward 136 in; turn right 50 deg; forward 144 in; unload; stop;";
+		
+$(document).ready(function(){
+	// sets a function that will be called when the websocket connects/disconnects
+	//NetworkTables.addWsConnectionListener(onNetworkTablesConnection, true);
+	
+	// sets a function that will be called when the robot connects/disconnects
+	NetworkTables.addRobotConnectionListener(onRobotConnection, true);
+	
+	// sets a function that will be called when any NetworkTables key/value changes
+	NetworkTables.addGlobalListener(onValueChanged, true);
+	
+	NetworkTables.putValue("/SmartDashboard/Autonomous", "0");
+	NetworkTables.putValue("/SmartDashboard/AutoCode", do_nothing);
+});
+
+$("#DropdownID").change(function(){
+	var currentVal = $("#DropdownID").val();
+	NetworkTables.putValue("/SmartDashboard/Autonomous", currentVal);
+	console.log(currentVal);
+	
+	switch(currentVal) {
+		case "1":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", reach);
+			break;
+		case "2":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", cross);
+			break;
+		case "3":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", score);
+			break;
+			
+		default:
+		case "0":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", do_nothing);
+			break;
+	}
+});
+
+$("#use_textbox").click(function() {
+	if($(this).prop("checked") === true) {
+		NetworkTables.putValue("/SmartDashboard/use_textbox", true);
+	} else {
+		NetworkTables.putValue("/SmartDashboard/use_textbox", false);
+	}
+});
+
+$("#textbox").change(function() {
+	var currentVal = $("#textbox").val();
+	if($("#use_textbox").prop("checked") === true) {
+		NetworkTables.putValue("/SmartDashboard/AutoCode", currentVal);
+	}
+});
+function onRobotConnection(connected) {
+	$('#robotstate').text(connected ? "Connected!" : "Disconnected");
+}
+
+function onValueChanged(key, value, isNew) {
+	// key thing here: we're using the various NetworkTable keys as
+	// the id of the elements that we're appending, for simplicity. However,
+	// the key names aren't always valid HTML identifiers, so we use
+	// the NetworkTables.keyToId() function to convert them appropriately
+	
+	if (isNew) {
+		var tr = $('<tr></tr>').appendTo($('#nt > tbody:last'));
+		$('<td></td>').text(key).appendTo(tr);
+		$('<td></td>').attr('id', NetworkTables.keyToId(key))
+					   .text(value)
+					   .appendTo(tr);
+	} else {
+	
+		// similarly, use keySelector to convert the key to a valid jQuery
+		// selector. This should work for class names also, not just for ids
+		$('#' + NetworkTables.keySelector(key)).text(value);
+	}
+}
+
+var canvas = document.getElementById("camera_stream");
+var ctx = canvas.getContext("2d");
+var img = new Image();
+img.src = "http://10.21.86.11/mjpg/video.mjpg";
+
+window.setInterval(function() {
+	ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+}, 10);
+		</script>
+	</body>
+</html>
