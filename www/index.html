@@ -48,6 +48,11 @@
 			</select>
 		<br />
 		
+		<div id="Autonomous">
+			Autonomous state: <span id="auto_state">Unknown</span>
+			Time to next auto state: <span id="auto_time">Unknown</span>
+		</div>
+		
 		<br />
 		<input type="checkbox" id="use_textbox">Use the textbox</input>
 		<br />
@@ -126,10 +131,59 @@ $("#textbox").change(function() {
 	var currentVal = $("#textbox").val();
 	if($("#use_textbox").prop("checked") === true) {
 		NetworkTables.putValue("/SmartDashboard/AutoCode", currentVal);
+	} else {
+		var autonum = $("#DropdownID").val();
+		switch(currentVal) {
+		case "1":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", reach);
+			break;
+		case "2":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", cross);
+			break;
+		case "3":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", score);
+			break;
+			
+		default:
+		case "0":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", do_nothing);
+			break;
+	}
 	}
 });
 function onRobotConnection(connected) {
 	$('#robotstate').text(connected ? "Connected!" : "Disconnected");
+}
+
+function updateAutoCode() {
+	if($("#use_textbox").prop("checked") === true) {
+		NetworkTables.putValue("/SmartDashboard/AutoCode", $("#textbox").val());
+	} else {
+		switch($("#DropdownID").val()) {
+			case "1":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", reach);
+			break;
+		case "2":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", cross);
+			break;
+		case "3":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", score);
+			break;
+			
+		default:
+		case "0":
+			NetworkTables.putValue("/SmartDashboard/AutoCode", do_nothing);
+			break;
+		}
+	}
+	
+	if(NetworkTables.getValue("/SmartDashboard/isInAuto", false)) {
+		$("#Autonomous").show();
+		$("#auto_state").val(NetworkTables.getValue("/SmartDashboard/AutoState"));
+		$("#auto_time").val(NetworkTables.getValue("/SmartDashboard/AutoTime"));
+	} else {
+		$("#Autonomous").hide();
+	}
 }
 
 function onValueChanged(key, value, isNew) {
@@ -159,6 +213,7 @@ img.src = "http://10.21.86.11/mjpg/video.mjpg";
 
 window.setInterval(function() {
 	ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+	updateAutoCode();
 }, 10);
 		</script>
 	</body>
