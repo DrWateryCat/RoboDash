@@ -212,7 +212,12 @@ var img = new Image();
 img.src = "http://10.21.86.11/mjpg/video.mjpg";
 
 window.setInterval(function() {
+	try {
 	ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height);
+	} catch(e) {
+		ctx.fillStyle = "#FF0000";
+		ctx.fillRect(0, 0, canvas.width, canvas.height); 
+	}
 	updateAutoCode();
 }, 10);
 		</script>
